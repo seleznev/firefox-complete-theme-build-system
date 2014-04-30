@@ -10,6 +10,7 @@ import re
 import time
 import json
 import subprocess
+import zipfile
 
 class CTBuilder():
     def __init__(self, config=None, build_dir=".build",
@@ -57,13 +58,19 @@ class CTBuilder():
 
         self.dependencies = self._load_dependencies_cache()
 
+        self.files_to_xpi = []
+
         for base, dirs, files in os.walk(self.theme_dir):
             for name in files:
                 self._process_file(os.path.join(base, name))
 
-        self._save_dependencies_cache(self.dependencies)
+        xpi = zipfile.ZipFile(self.config["xpi"]["theme"], "w")
+        for i in self.files_to_xpi:
+            xpi.write(i[0], i[1])
+        xpi.close()
+        del self.files_to_xpi
 
-        self._archive(self.build_theme_dir, self.config["xpi"]["theme"])
+        self._save_dependencies_cache(self.dependencies)
 
     def build_extension(self):
         self._archive(self.extension_dir, self.config["xpi"]["extension"])
@@ -120,11 +127,6 @@ class CTBuilder():
             cmd = cmd + " < '" + source + "' > '" + target + "'"
             subprocess.call(cmd, shell=True)
 
-    def _copy(self, source, target):
-        print("Copy " + source + " to " + target)
-        os.makedirs(os.path.dirname(target), exist_ok=True)
-        subprocess.call(["cp", source, target])
-
     def _preprocess(self, source, target, current_version):
         print("Convert " + source + " to " + target)
 
@@ -176,40 +178,41 @@ class CTBuilder():
             pass
         elif source_short.startswith(self.shared_dir + "/"):
             for app_version in self.app_versions:
-                sub_path = re.sub(r"^"+self.shared_dir, "chrome-" + str(app_version),
+                sub_path = re.sub(r"^"+self.shared_dir,
+                                  "chrome-" + str(app_version),
                                   source_short)
 
                 if os.path.exists(os.path.join(self.theme_dir, sub_path)):
                     continue
 
-                target = os.path.join(self.build_theme_dir, sub_path)
+                target = sub_path
 
                 deps = [source]
                 if source in self.dependencies:
                     deps = deps + self.dependencies[source]
 
-                if not self._is_need_update(target, deps):
-                    continue
-
                 if source_short.endswith(".css"):
-                    self._preprocess(source, target, app_version)
+                    source_res = os.path.join(self.build_theme_dir, sub_path)
+                    if self._is_need_update(source_res, deps):
+                        self._preprocess(source, source_res, app_version)
+                    self.files_to_xpi.append([source_res, target])
                 else:
-                    self._copy(source, target)
+                    self.files_to_xpi.append([source, target])
         else:
-            target = os.path.join(self.build_theme_dir, source_short)
+            target = source_short
 
             deps = [source]
             if source in self.dependencies:
                 deps = deps + self.dependencies[source]
 
-            if not self._is_need_update(target, deps):
-                return
-
             if source_short.endswith(".css"):
-                if source_short.startswith("chrome-"):
-                    app_version = re.sub(r"^chrome-", "", source_short)
-                    app_version = re.sub(r"\/.*", "", app_version)
-                    app_version = int(app_version)
-                self._preprocess(source, target, app_version)
+                source_res = os.path.join(self.build_theme_dir, source_short)
+                if self._is_need_update(source_res, deps):
+                    if source_short.startswith("chrome-"):
+                        app_version = re.sub(r"^chrome-", "", source_short)
+                        app_version = re.sub(r"\/.*", "", app_version)
+                        app_version = int(app_version)
+                    self._preprocess(source, source_res, app_version)
+                self.files_to_xpi.append([source_res, target])
             else:
-                self._copy(source, target)
+                self.files_to_xpi.append([source, target])
