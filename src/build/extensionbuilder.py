@@ -11,9 +11,10 @@ import subprocess
 from addonbuilder import AddonBuilder
 
 class ExtensionBuilder(AddonBuilder):
-    def __init__(self, config=None, src_dir="extension", build_dir=".build/extension"):
-        AddonBuilder.__init__(self, config=config,
-                              src_dir=src_dir, build_dir=build_dir)
+    def __init__(self, src_dir="extension", build_dir=".build/extension",
+                 config_file="config.json"):
+        AddonBuilder.__init__(self, src_dir=src_dir, build_dir=build_dir,
+                              config_file=config_file)
 
         self.xpi_file = self.config["xpi"]["extension"]
 

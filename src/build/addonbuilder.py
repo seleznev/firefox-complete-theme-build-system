@@ -5,15 +5,21 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
+import sys
 import os
 import re
 import time
+import json
 import subprocess
 import zipfile
 
 class AddonBuilder():
-    def __init__(self, config=None, src_dir=".", build_dir=".build"):
-        self.config = self._validate_config(config)
+    def __init__(self, src_dir=".", build_dir=".build", config_file="config.json"):
+        self.config = self._load_config(config_file)
+        if "VERSION" in os.environ:
+            self.config["override-version"] = True
+            self.config["version"] = os.environ.get("VERSION")
+        self.config = self._validate_config(self.config)
 
         self.src_dir = os.path.normpath(src_dir)
         self.build_dir = os.path.normpath(build_dir)
@@ -22,12 +28,44 @@ class AddonBuilder():
 
         os.makedirs(self.build_dir, exist_ok=True)
 
-    def _validate_config(self, config):
-        if "version" in config:
-            version = config["version"]
+    def _load_config(self, path):
+        try:
+            with open(path, "r") as config_file:
+                config = json.load(config_file)
+                return config
+        except FileNotFoundError:
+            print("%s: %s not found" % (sys.argv[0], path))
+            sys.exit(1)
+        except ValueError as e:
+            print("%s: parse error: %s" % (sys.argv[0], path))
+            print(e)
+            sys.exit(1)
 
-            for i in ["theme", "extension", "package"]:
-                config["xpi"][i] = config["xpi"][i].replace("@VERSION@", version)
+    class ConfigError(RuntimeError):
+        def __init__(self, message):
+            self.message = message
+
+    def _validate_config(self, config):
+        try:
+            if not "version" in config and not "override-version" in config:
+                raise AddonBuilder.ConfigError("version is not specified")
+
+            if not "min-version" in config:
+                raise AddonBuilder.ConfigError("min-version is not specified")
+
+            if not "max-version" in config:
+                raise AddonBuilder.ConfigError("max-version is not specified")
+
+            if not "xpi" in config:
+                raise AddonBuilder.ConfigError("file name for *.xpi is not specified")
+        except AddonBuilder.ConfigError as e:
+            print("%s: %s" % (sys.argv[0], e.message))
+            sys.exit(1)
+
+        x = "xpi"
+        for i in ["theme", "extension", "package"]:
+            if i in config[x]:
+                config[x][i] = config[x][i].replace("@VERSION@", config["version"])
 
         return config
 
@@ -49,7 +87,7 @@ class AddonBuilder():
     def _process_file(self, source):
         if source == "install.rdf.in":
             target = source[:-3]
-            if self._is_need_update(target, source):
+            if self._is_need_update(target, source) or "override-version" in self.config:
                 self._generate_install_manifest(source, target)
             self.result_files.append([os.path.join(self.build_dir, target), target])
         else:
@@ -83,7 +121,7 @@ class AddonBuilder():
     def _generate_install_manifest(self, source, target):
         source = os.path.join(self.src_dir, source)
         target = os.path.join(self.build_dir, target)
-        print("Convert " + source + " to " + target)
+        print("Convert %s to %s" % (source, target))
         os.makedirs(os.path.dirname(target), exist_ok=True)
         cmd = "sed"
         cmd = cmd + " -e s,[@]VERSION[@]," + self.config["version"] + ",g"
@@ -95,7 +133,7 @@ class AddonBuilder():
     def _preprocess(self, source, target, app_version=None):
         source_full = os.path.join(self.src_dir, source)
         target_full = os.path.join(self.build_dir, target)
-        print("Convert " + source_full + " to " + target_full)
+        print("Convert %s to %s" % (source_full, target_full))
 
         deps_tmp_file = os.path.join(self.build_dir, "deps.tmp")
         os.makedirs(os.path.dirname(deps_tmp_file), exist_ok=True)

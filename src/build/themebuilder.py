@@ -8,16 +8,16 @@
 import os
 import re
 import time
-import json
 import subprocess
 import zipfile
 
 from addonbuilder import AddonBuilder
 
 class ThemeBuilder(AddonBuilder):
-    def __init__(self, config=None, src_dir="theme", build_dir=".build/theme"):
-        AddonBuilder.__init__(self, config=config,
-                              src_dir=src_dir, build_dir=build_dir)
+    def __init__(self, src_dir="theme", build_dir=".build/theme",
+                 config_file="config.json"):
+        AddonBuilder.__init__(self, src_dir=src_dir, build_dir=build_dir,
+                              config_file=config_file)
 
         self.shared_dir = self.config["directory-structure"]["shared-dir"]
 
@@ -65,7 +65,7 @@ class ThemeBuilder(AddonBuilder):
     def _generate_chrome_manifest(self, source, target, min_version, max_version):
         source = os.path.join(self.src_dir, source)
         target = os.path.join(self.build_dir, target)
-        print("Convert " + source + " to " + target)
+        print("Convert %s to %s" % (source, target))
         os.makedirs(os.path.dirname(target), exist_ok=True)
         subprocess.call(["build/manifest.sh",
                         "-m", str(min_version),
@@ -75,7 +75,9 @@ class ThemeBuilder(AddonBuilder):
     def _process_file(self, source):
         if source in ["chrome.manifest.in", "install.rdf.in"]:
             target = source[:-3]
-            if self._is_need_update(target, source):
+            if source == "install.rdf.in" and "override-version" in self.config:
+                self._generate_install_manifest(source, target)
+            elif self._is_need_update(target, source):
                 if source == "chrome.manifest.in":
                     self._generate_chrome_manifest(source, target,
                                                    min(self.app_versions),

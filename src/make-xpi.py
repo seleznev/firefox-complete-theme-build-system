@@ -52,19 +52,12 @@ def main():
         sys.exit(0)
 
     #
-    # Preparing
-    #
-
-    with open("config.json", "r") as config_file:
-        config = json.load(config_file)
-
-    #
     # Theme building
     #
 
     if action in ["theme", "all"]:
+        builder = ThemeBuilder()
         print(":: Starting build theme...")
-        builder = ThemeBuilder(config)
         builder.build()
 
     #
@@ -72,8 +65,8 @@ def main():
     #
 
     if action in ["extension", "all"]:
+        builder = ExtensionBuilder()
         print(":: Starting build extension...")
-        builder = ExtensionBuilder(config)
         builder.build()
 
     #
@@ -81,8 +74,8 @@ def main():
     #
 
     if action in ["all"]:
+        builder = PackageBuilder()
         print(":: Starting make package...")
-        builder = PackageBuilder(config)
         builder.build()
 
 if __name__ == "__main__":

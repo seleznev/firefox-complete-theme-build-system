@@ -11,9 +11,10 @@ import zipfile
 from addonbuilder import AddonBuilder
 
 class PackageBuilder(AddonBuilder):
-    def __init__(self, config=None, src_dir="", build_dir=".build"):
-        AddonBuilder.__init__(self, config=config,
-                              src_dir=src_dir, build_dir=build_dir)
+    def __init__(self, src_dir="", build_dir=".build",
+                 config_file="config.json"):
+        AddonBuilder.__init__(self, src_dir=src_dir, build_dir=build_dir,
+                              config_file=config_file)
 
         self.xpi_file = self.config["xpi"]["package"]
 
