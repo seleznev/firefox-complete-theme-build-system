@@ -21,7 +21,9 @@ import json
 
 sys.path.insert(0, "./build")
 
-from ctbuilder import CTBuilder
+from themebuilder import ThemeBuilder
+from extensionbuilder import ExtensionBuilder
+from packagebuilder import PackageBuilder
 
 def main():
     args = sys.argv[1:]
@@ -56,16 +58,15 @@ def main():
     with open("config.json", "r") as config_file:
         config = json.load(config_file)
 
-    builder = CTBuilder(config=config, build_dir=".build",
-                        theme_dir="theme", extension_dir="extension")
-
     #
     # Theme building
     #
 
     if action in ["theme", "all"]:
         print(":: Starting build theme...")
-        builder.build_theme()
+        builder = ThemeBuilder(config=config, build_dir=".build",
+                               theme_dir="theme")
+        builder.build()
 
     #
     # Extension building
@@ -73,7 +74,9 @@ def main():
 
     if action in ["extension", "all"]:
         print(":: Starting build extension...")
-        builder.build_extension()
+        builder = ExtensionBuilder(config=config, build_dir=".build",
+                                   extension_dir="extension")
+        builder.build()
 
     #
     # Package building
@@ -81,7 +84,8 @@ def main():
 
     if action in ["all"]:
         print(":: Starting make package...")
-        builder.build_package()
+        builder = PackageBuilder(config=config, build_dir=".build")
+        builder.build()
 
 if __name__ == "__main__":
     main()

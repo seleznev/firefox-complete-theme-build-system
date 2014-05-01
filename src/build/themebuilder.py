@@ -12,36 +12,26 @@ import json
 import subprocess
 import zipfile
 
-class CTBuilder():
-    def __init__(self, config=None, build_dir=".build",
-                 theme_dir="theme", extension_dir="extension"):
-        self.config = self._validate_config(config)
+from addonbuilder import AddonBuilder
 
-        self.build_dir = os.path.normpath(build_dir)
+class ThemeBuilder(AddonBuilder):
+    def __init__(self, config=None, build_dir=".build", theme_dir="theme"):
+        AddonBuilder.__init__(self, config=config, build_dir=build_dir)
+
         self.theme_dir = os.path.normpath(theme_dir)
-        self.extension_dir = os.path.normpath(extension_dir)
         self.build_theme_dir = os.path.join(
                              self.build_dir,
                              os.path.basename(self.theme_dir))
-        #self.build_extension_dir = os.path.join(
-        #                         self.build_dir,
-        #                         os.path.basename(self.extension_dir))
 
         self.shared_dir = self.config["directory-structure"]["shared-dir"]
 
         self.default_dependencies = {
-            "theme/install.rdf.in": ["config.json"],
-            "theme/chrome.manifest.in": ["config.json"],
+            os.path.join(self.theme_dir, "install.rdf.in"): ["config.json"],
+            os.path.join(self.theme_dir, "chrome.manifest.in"): ["config.json"]
         }
 
-        os.makedirs(self.build_dir, exist_ok=True)
-
     def _validate_config(self, config):
-        if "version" in config:
-            version = config["version"]
-
-            for i in ["theme", "extension", "package"]:
-                config["xpi"][i] = config["xpi"][i].replace("@VERSION@", version)
+        config = AddonBuilder._validate_config(self, config)
 
         if not "directory-structure" in config:
             config["directory-structure"] = {}
@@ -49,7 +39,7 @@ class CTBuilder():
 
         return config
 
-    def build_theme(self):
+    def build(self):
         self.app_versions = []
         for name in os.listdir(self.theme_dir):
             if name.startswith("chrome-"):
@@ -72,14 +62,6 @@ class CTBuilder():
 
         self._save_dependencies_cache(self.dependencies)
 
-    def build_extension(self):
-        self._archive(self.extension_dir, self.config["xpi"]["extension"])
-
-    def build_package(self):
-        subprocess.call(["zip", "-FS", "-r", self.config["xpi"]["package"],
-                         "install.rdf", self.config["xpi"]["theme"],
-                         self.config["xpi"]["extension"]])
-
     def _load_dependencies_cache(self):
         path = os.path.join(self.build_dir, "deps.cache")
         if not os.path.exists(path):
@@ -91,41 +73,15 @@ class CTBuilder():
         with open(os.path.join(self.build_dir, "deps.cache"), "w") as cache_file:
             json.dump(deps, cache_file)
 
-    def _is_need_update(self, target, dependencies=None):
-        if not os.path.exists(target):
-            return True
-
-        target_mtime = os.path.getmtime(target)
-        for source in dependencies:
-            if os.path.getmtime(source) > target_mtime:
-                return True
-
-        return False
-
-    def _archive(self, source, target):
-        saved_path = os.getcwd()
-        zip_archive = os.path.abspath(target)
-        os.chdir(source)
-        subprocess.call("zip -FS -r " + zip_archive + " *", shell=True)
-        os.chdir(saved_path)
-
-    def _generate_manifest(self, source, target, manifest_type="chrome"):
+    def _generate_chrome_manifest(self, source, target):
         print("Convert " + source + " to " + target)
 
         os.makedirs(os.path.dirname(target), exist_ok=True)
 
-        if manifest_type == "chrome":
-            subprocess.call(["build/manifest.sh",
-                            "-m", str(min(self.app_versions)),
-                            "-M", str(max(self.app_versions)),
-                            source, target])
-        else:
-            cmd = "sed"
-            cmd = cmd + " -e s,[@]VERSION[@]," + self.config["version"] + ",g"
-            cmd = cmd + " -e s,[@]MIN_VERSION[@]," + self.config["min-version"] + ",g"
-            cmd = cmd + " -e s,[@]MAX_VERSION[@]," + self.config["max-version"] + ",g"
-            cmd = cmd + " < '" + source + "' > '" + target + "'"
-            subprocess.call(cmd, shell=True)
+        subprocess.call(["build/manifest.sh",
+                        "-m", str(min(self.app_versions)),
+                        "-M", str(max(self.app_versions)),
+                        source, target])
 
     def _preprocess(self, source, target, current_version):
         print("Convert " + source + " to " + target)
@@ -171,9 +127,9 @@ class CTBuilder():
                 return
 
             if source_short == "chrome.manifest.in":
-                self._generate_manifest(source, target, manifest_type="chrome")
+                self._generate_chrome_manifest(source, target)
             else:
-                self._generate_manifest(source, target, manifest_type="install")
+                self._generate_install_manifest(source, target)
         elif source_short.endswith(".inc.css"):
             pass
         elif source_short.startswith(self.shared_dir + "/"):
@@ -216,3 +172,4 @@ class CTBuilder():
                 self.files_to_xpi.append([source_res, target])
             else:
                 self.files_to_xpi.append([source, target])
+
