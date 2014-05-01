@@ -5,13 +5,32 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-import subprocess
+import os
+import zipfile
 
 from addonbuilder import AddonBuilder
 
 class PackageBuilder(AddonBuilder):
+    def __init__(self, config=None, src_dir="", build_dir=".build"):
+        AddonBuilder.__init__(self, config=config,
+                              src_dir=src_dir, build_dir=build_dir)
+
+        self.xpi_file = self.config["xpi"]["package"]
+
+        self.dependencies = {
+            "install.rdf.in": ["config.json"]
+        }
+
     def build(self):
-        subprocess.call(["zip", "-FS", "-r", self.config["xpi"]["package"],
-                         "install.rdf", self.config["xpi"]["theme"],
-                         self.config["xpi"]["extension"]])
+        self.result_files = []
+
+        for source in [self.config["xpi"]["theme"], self.config["xpi"]["extension"], "install.rdf.in"]:
+            self._process_file(source)
+
+        xpi = zipfile.ZipFile(self.xpi_file, "w")
+        for i in self.result_files:
+            xpi.write(i[0], i[1]) # source, path_inside_xpi
+        xpi.close()
+
+        del self.result_files
 

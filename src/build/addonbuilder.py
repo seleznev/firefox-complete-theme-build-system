@@ -12,9 +12,14 @@ import subprocess
 import zipfile
 
 class AddonBuilder():
-    def __init__(self, config=None, build_dir=".build"):
+    def __init__(self, config=None, src_dir=".", build_dir=".build"):
         self.config = self._validate_config(config)
+
+        self.src_dir = os.path.normpath(src_dir)
         self.build_dir = os.path.normpath(build_dir)
+
+        self.dependencies = {}
+
         os.makedirs(self.build_dir, exist_ok=True)
 
     def _validate_config(self, config):
@@ -26,25 +31,58 @@ class AddonBuilder():
 
         return config
 
-    def _is_need_update(self, target, dependencies=None):
-        if not os.path.exists(target):
+    def build(self):
+        self.result_files = []
+
+        for base, dirs, files in os.walk(self.src_dir):
+            for name in files:
+                source = os.path.join(base, name)[len(self.src_dir)+1:]
+                self._process_file(source)
+
+        xpi = zipfile.ZipFile(self.xpi_file, "w")
+        for i in self.result_files:
+            xpi.write(i[0], i[1]) # source, path_inside_xpi
+        xpi.close()
+
+        del self.result_files
+
+    def _process_file(self, source):
+        if source == "install.rdf.in":
+            target = source[:-3]
+            if self._is_need_update(target, source):
+                self._generate_install_manifest(source, target)
+            self.result_files.append([os.path.join(self.build_dir, target), target])
+        else:
+            target = source
+            self.result_files.append([os.path.join(self.src_dir, source), target])
+
+    def _is_need_update(self, target, source=None, dependencies=None):
+        target_full = os.path.join(self.build_dir, target)
+
+        if not os.path.exists(target_full):
             return True
 
-        target_mtime = os.path.getmtime(target)
-        for source in dependencies:
-            if os.path.getmtime(source) > target_mtime:
+        if not dependencies and source:
+            dependencies = [source]
+            if source in self.dependencies:
+                dependencies = dependencies + (self.dependencies[source])
+
+        target_mtime = os.path.getmtime(target_full)
+        for f in dependencies:
+            if os.path.getmtime(os.path.join(self.src_dir, f)) > target_mtime:
                 return True
 
         return False
 
-    def _archive(self, source, target):
-        saved_path = os.getcwd()
-        zip_archive = os.path.abspath(target)
-        os.chdir(source)
-        subprocess.call("zip -FS -r " + zip_archive + " *", shell=True)
-        os.chdir(saved_path)
+    def _get_dependencies(self, source):
+        deps = [source]
+        if source in self.dependencies:
+            deps = deps + self.dependencies[source]
+        return deps
 
     def _generate_install_manifest(self, source, target):
+        source = os.path.join(self.src_dir, source)
+        target = os.path.join(self.build_dir, target)
         print("Convert " + source + " to " + target)
         os.makedirs(os.path.dirname(target), exist_ok=True)
         cmd = "sed"
@@ -54,29 +92,32 @@ class AddonBuilder():
         cmd = cmd + " < '" + source + "' > '" + target + "'"
         subprocess.call(cmd, shell=True)
 
-    def _preprocess(self, source, target, current_version=None):
-        print("Convert " + source + " to " + target)
+    def _preprocess(self, source, target, app_version=None):
+        source_full = os.path.join(self.src_dir, source)
+        target_full = os.path.join(self.build_dir, target)
+        print("Convert " + source_full + " to " + target_full)
 
         deps_tmp_file = os.path.join(self.build_dir, "deps.tmp")
+        os.makedirs(os.path.dirname(deps_tmp_file), exist_ok=True)
 
-        os.makedirs(os.path.dirname(target), exist_ok=True)
+        os.makedirs(os.path.dirname(target_full), exist_ok=True)
 
         variables = []
-        if current_version:
-            variables.append(["-D", "APP_VERSION="+str(current_version)])
+        if app_version:
+            variables = ["-D", "APP_VERSION="+str(app_version)]
 
         cmd = []
-        cmd.append(["python2", "build/preprocessor.py", "--marker=%"])
-        cmd.append(["--depend="+deps_tmp_file])
-        cmd.append(variables)
-        cmd.append(["--output="+target, source])
+        cmd = cmd + ["python2", "build/preprocessor.py", "--marker=%"]
+        cmd = cmd + ["--depend="+deps_tmp_file]
+        cmd = cmd + variables
+        cmd = cmd + ["--output="+target_full, source_full]
 
         subprocess.call(cmd)
 
         line = open(deps_tmp_file, "r").readline()
         line = re.sub(r"^[^:]*:", "", line)
-        line = line.replace(os.path.abspath(self.theme_dir), self.theme_dir)
-        line = line.replace(source, "")
+        line = line.replace(os.path.abspath(self.src_dir)+"/", "")
+        line = line.replace(source_full, "")
         line = line.strip()
 
         if line:
@@ -90,4 +131,15 @@ class AddonBuilder():
             del self.dependencies[source]
         elif len(deps) > 0:
             self.dependencies[source] = deps
+
+    def _load_dependencies_cache(self):
+        path = os.path.join(self.build_dir, "deps.cache")
+        if not os.path.exists(path):
+            return self.default_dependencies
+        with open(path, "r") as cache_file:
+            return json.load(cache_file)
+
+    def _save_dependencies_cache(self, deps):
+        with open(os.path.join(self.build_dir, "deps.cache"), "w") as cache_file:
+            json.dump(deps, cache_file)
 

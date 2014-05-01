@@ -11,21 +11,12 @@ import subprocess
 from addonbuilder import AddonBuilder
 
 class ExtensionBuilder(AddonBuilder):
-    def __init__(self, config=None, build_dir=".build", extension_dir="extension"):
-        AddonBuilder.__init__(self, config=config, build_dir=build_dir)
+    def __init__(self, config=None, src_dir="extension", build_dir=".build/extension"):
+        AddonBuilder.__init__(self, config=config,
+                              src_dir=src_dir, build_dir=build_dir)
 
-        self.extension_dir = os.path.normpath(extension_dir)
-        self.build_extension_dir = os.path.join(
-                                 self.build_dir,
-                                 os.path.basename(self.extension_dir))
+        self.xpi_file = self.config["xpi"]["extension"]
 
-    def build(self):
-        self._archive(self.extension_dir, self.config["xpi"]["extension"])
-
-    def _archive(self, source, target):
-        saved_path = os.getcwd()
-        zip_archive = os.path.abspath(target)
-        os.chdir(source)
-        subprocess.call("zip -FS -r " + zip_archive + " *", shell=True)
-        os.chdir(saved_path)
-
+        self.dependencies = {
+            "install.rdf.in": ["../config.json"]
+        }

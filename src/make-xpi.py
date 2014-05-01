@@ -64,8 +64,7 @@ def main():
 
     if action in ["theme", "all"]:
         print(":: Starting build theme...")
-        builder = ThemeBuilder(config=config, build_dir=".build",
-                               theme_dir="theme")
+        builder = ThemeBuilder(config)
         builder.build()
 
     #
@@ -74,8 +73,7 @@ def main():
 
     if action in ["extension", "all"]:
         print(":: Starting build extension...")
-        builder = ExtensionBuilder(config=config, build_dir=".build",
-                                   extension_dir="extension")
+        builder = ExtensionBuilder(config)
         builder.build()
 
     #
@@ -84,7 +82,7 @@ def main():
 
     if action in ["all"]:
         print(":: Starting make package...")
-        builder = PackageBuilder(config=config, build_dir=".build")
+        builder = PackageBuilder(config)
         builder.build()
 
 if __name__ == "__main__":
