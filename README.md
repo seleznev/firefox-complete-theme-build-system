@@ -1,4 +1,32 @@
-# FxCTBS — Firefox Complete Theme Build System
+# Firefox Complete Theme Build System
+
+Pack of scripts what can help you to make a Firefox theme.
+
+## How to use
+
+Main script is __make-xpi.py__ written on Python 3. Use it for build xpi and clean temporary files.
+
+```Bash
+$ ./make-xpi.py [TARGET]
+```
+
+Available targets: _all_, _theme_, _extension_ and _clean_. Default is _all_.
+
+Examples:
+
+```Bash
+$ ./make-xpi.py
+$ ./make-xpi.py all
+$ ./make-xpi.py theme
+$ ./make-xpi.py extension
+$ ./make-xpi.py clean
+```
+
+Also you can specifity _$VERSION_ environment variable to override you value in _config.json_.
+
+```Bash
+$ VERSION="0.9" ./make-xpi.py all
+```
 
 ## Copyright
 
