@@ -22,9 +22,10 @@ $ ./make-xpi.py extension
 $ ./make-xpi.py clean
 ```
 
-Also you can specifity _$VERSION_ environment variable to override you value in _config.json_.
+Also you can specifity _$VERSION_ environment variable or use _--version_ to override you value in _config.json_.
 
 ```Bash
+$ ./make-xpi.py --version="0.9" all
 $ VERSION="0.9" ./make-xpi.py all
 ```
 
