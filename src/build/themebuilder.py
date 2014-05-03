@@ -9,7 +9,6 @@ import os
 import re
 import time
 import subprocess
-import zipfile
 
 from addonbuilder import AddonBuilder
 
@@ -47,18 +46,11 @@ class ThemeBuilder(AddonBuilder):
         self.dependencies = self._load_dependencies_cache()
 
         self.result_files = []
-
         for base, dirs, files in os.walk(self.src_dir):
             for name in files:
                 source = os.path.join(base, name)[len(self.src_dir)+1:]
                 self._process_file(source)
-
-        xpi = zipfile.ZipFile(self.xpi_file, "w")
-        for i in self.result_files:
-            xpi.write(i[0], i[1]) # source, path_inside_xpi
-        xpi.close()
-
-        del self.result_files
+        self._create_xpi()
 
         self._save_dependencies_cache(self.dependencies)
 

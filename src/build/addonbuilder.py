@@ -71,18 +71,11 @@ class AddonBuilder():
 
     def build(self):
         self.result_files = []
-
         for base, dirs, files in os.walk(self.src_dir):
             for name in files:
                 source = os.path.join(base, name)[len(self.src_dir)+1:]
                 self._process_file(source)
-
-        xpi = zipfile.ZipFile(self.xpi_file, "w")
-        for i in self.result_files:
-            xpi.write(i[0], i[1]) # source, path_inside_xpi
-        xpi.close()
-
-        del self.result_files
+        self._create_xpi()
 
     def _process_file(self, source):
         if source == "install.rdf.in":
@@ -163,6 +156,15 @@ class AddonBuilder():
             self._update_dependencies(source, deps)
 
         #os.remove(deps_tmp_file)
+
+    def _create_xpi(self, files_map=None):
+        if not files_map:
+            files_map = self.result_files
+
+        xpi = zipfile.ZipFile(self.xpi_file, "w")
+        for i in files_map:
+            xpi.write(i[0], i[1]) # source, path_inside_xpi
+        xpi.close()
 
     def _update_dependencies(self, source, deps):
         if len(deps) == 0 and source in self.dependencies:
