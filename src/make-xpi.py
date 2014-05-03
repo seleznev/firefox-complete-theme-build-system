@@ -33,6 +33,8 @@ def main():
                         help="build theme, extension, package or clean sources")
     parser.add_argument("--version",
                         help="override version from config.json")
+    parser.add_argument("--target-version", type=int,
+                        help="build for a certain version only")
     args = parser.parse_args()
 
     action = args.action
@@ -72,6 +74,8 @@ def main():
     if args.version:
         config["version"] = args.version
         config["override-version"] = True
+    if args.target_version:
+        config["target-version"] = args.target_version
 
     #
     # Theme building
