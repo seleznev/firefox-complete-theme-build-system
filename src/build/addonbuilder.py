@@ -14,12 +14,8 @@ import subprocess
 import zipfile
 
 class AddonBuilder():
-    def __init__(self, src_dir=".", build_dir=".build", config_file="config.json"):
-        self.config = self._load_config(config_file)
-        if "VERSION" in os.environ:
-            self.config["override-version"] = True
-            self.config["version"] = os.environ.get("VERSION")
-        self.config = self._validate_config(self.config)
+    def __init__(self, config, src_dir=".", build_dir=".build"):
+        self.config = self._validate_config(config)
 
         self.src_dir = os.path.normpath(src_dir)
         self.build_dir = os.path.normpath(build_dir)
@@ -27,19 +23,6 @@ class AddonBuilder():
         self.dependencies = {}
 
         os.makedirs(self.build_dir, exist_ok=True)
-
-    def _load_config(self, path):
-        try:
-            with open(path, "r") as config_file:
-                config = json.load(config_file)
-                return config
-        except FileNotFoundError:
-            print("%s: %s not found" % (sys.argv[0], path))
-            sys.exit(1)
-        except ValueError as e:
-            print("%s: parse error: %s" % (sys.argv[0], path))
-            print(e)
-            sys.exit(1)
 
     class ConfigError(RuntimeError):
         def __init__(self, message):

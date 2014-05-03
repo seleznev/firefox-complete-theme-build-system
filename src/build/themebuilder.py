@@ -13,10 +13,9 @@ import subprocess
 from addonbuilder import AddonBuilder
 
 class ThemeBuilder(AddonBuilder):
-    def __init__(self, src_dir="theme", build_dir=".build/theme",
-                 config_file="config.json"):
-        AddonBuilder.__init__(self, src_dir=src_dir, build_dir=build_dir,
-                              config_file=config_file)
+    def __init__(self, config, src_dir="theme", build_dir=".build/theme"):
+        AddonBuilder.__init__(self, config=config,
+                              src_dir=src_dir, build_dir=build_dir)
 
         self.shared_dir = self.config["directory-structure"]["shared-dir"]
 
