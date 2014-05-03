@@ -71,13 +71,23 @@ class ThemeBuilder(AddonBuilder):
     def _process_file(self, source):
         if source in ["chrome.manifest.in", "install.rdf.in"]:
             target = source[:-3]
-            if source == "install.rdf.in" and ("override-version" in self.config or self._is_need_update(target, source)):
-                self._generate_install_manifest(source, target)
-            if source == "chrome.manifest.in" and ("target-version" in self.config or self._is_need_update(target, source)):
-                self._generate_chrome_manifest(source, target,
+            override = False
+            if "override-version" in self.config or "target-version" in self.config:
+                target = target + ".override"
+                override = True
+
+            if override or self._is_need_update(target, source):
+                if source == "install.rdf.in":
+                    self._generate_install_manifest(source, target)
+                else:
+                    self._generate_chrome_manifest(source, target,
                                                min(self.app_versions),
                                                max(self.app_versions))
-            self.result_files.append([os.path.join(self.build_dir, target), target])
+
+            if override:
+                self.result_files.append([os.path.join(self.build_dir, target), target[:-9]])
+            else:
+                self.result_files.append([os.path.join(self.build_dir, target), target])
         elif source.endswith(".inc.css"):
             pass
         elif source.startswith(self.shared_dir + "/"):

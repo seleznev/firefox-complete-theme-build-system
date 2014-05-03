@@ -63,9 +63,18 @@ class AddonBuilder():
     def _process_file(self, source):
         if source == "install.rdf.in":
             target = source[:-3]
-            if self._is_need_update(target, source) or "override-version" in self.config:
+            override = False
+            if "override-version" in self.config or "target-version" in self.config:
+                target = target + ".override"
+                override = True
+
+            if override or self._is_need_update(target, source):
                 self._generate_install_manifest(source, target)
-            self.result_files.append([os.path.join(self.build_dir, target), target])
+
+            if override:
+                self.result_files.append([os.path.join(self.build_dir, target), target[:-9]])
+            else:
+                self.result_files.append([os.path.join(self.build_dir, target), target])
         else:
             target = source
             self.result_files.append([os.path.join(self.src_dir, source), target])
