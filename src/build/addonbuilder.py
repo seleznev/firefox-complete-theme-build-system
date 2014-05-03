@@ -161,7 +161,7 @@ class AddonBuilder():
         if not files_map:
             files_map = self.result_files
 
-        xpi = zipfile.ZipFile(self.xpi_file, "w")
+        xpi = zipfile.ZipFile(self.xpi_file, "w", compression=zipfile.ZIP_STORED)
         for i in files_map:
             xpi.write(i[0], i[1]) # source, path_inside_xpi
         xpi.close()
