@@ -18,6 +18,7 @@ import sys
 import os
 import shutil
 import json
+import argparse
 
 sys.path.insert(0, "./build")
 
@@ -26,16 +27,13 @@ from extensionbuilder import ExtensionBuilder
 from packagebuilder import PackageBuilder
 
 def main():
-    args = sys.argv[1:]
-    if len(args) == 1:
-        action = args[0]
-    else:
-        action = "all"
+    parser = argparse.ArgumentParser()
+    parser.add_argument("action", nargs='?', default="all",
+                        choices=["all", "theme", "extension", "clean"],
+                        help="build theme, extension, package or clean sources")
+    args = parser.parse_args()
 
-    if not action in ["all", "theme", "extension", "clean"]:
-        print(sys.argv[0] + ": uncorrect target")
-        print("Availible targets: all, theme, extension, clean")
-        sys.exit(1)
+    action = args.action
 
     #
     # Clean up
@@ -73,7 +71,7 @@ def main():
     # Package building
     #
 
-    if action in ["all"]:
+    if action == "all":
         builder = PackageBuilder()
         print(":: Starting make package...")
         builder.build()
