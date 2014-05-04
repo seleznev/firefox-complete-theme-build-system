@@ -108,13 +108,16 @@ class AddonBuilder():
         target = os.path.join(self.build_dir, target)
         if self.config["verbose"]:
             print("Convert %s to %s" % (source, target))
+
         os.makedirs(os.path.dirname(target), exist_ok=True)
-        cmd = "sed"
-        cmd = cmd + " -e s,[@]VERSION[@]," + self.config["version"] + ",g"
-        cmd = cmd + " -e s,[@]MIN_VERSION[@]," + self.config["min-version"] + ",g"
-        cmd = cmd + " -e s,[@]MAX_VERSION[@]," + self.config["max-version"] + ",g"
-        cmd = cmd + " < '" + source + "' > '" + target + "'"
-        subprocess.call(cmd, shell=True)
+
+        with open(source, "rt") as source_file:
+            with open(target, "wt") as target_file:
+                for l in source_file:
+                    l = l.replace("@VERSION@", str(self.config["version"]))
+                    l = l.replace("@MIN_VERSION@", str(self.config["min-version"]))
+                    l = l.replace("@MAX_VERSION@", str(self.config["max-version"]))
+                    target_file.write(l)
 
     def _preprocess(self, source, target, app_version=None):
         source_full = os.path.join(self.src_dir, source)
