@@ -112,7 +112,11 @@ class AddonBuilder():
         cmd = cmd + variables
         cmd = cmd + ["--output="+target_full, source_full]
 
-        subprocess.call(cmd)
+        if subprocess.call(cmd):
+            print("BuildError: preprocessor.py returned no zero code")
+            print("Full command was: \"%s\"" % " ".join(str(e) for e in cmd))
+            os.remove(target_full)
+            sys.exit(2)
 
         line = open(deps_tmp_file, "r").readline()
         line = re.sub(r"^[^:]*:", "", line)
