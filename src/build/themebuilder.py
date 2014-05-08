@@ -24,15 +24,6 @@ class ThemeBuilder(AddonBuilder):
             "chrome.manifest.in": ["../config.json"]
         }
 
-    def _validate_config(self, config):
-        config = AddonBuilder._validate_config(self, config)
-
-        if not "directory-structure" in config:
-            config["directory-structure"] = {}
-            config["directory-structure"]["shared-dir"] = "shared"
-
-        return config
-
     def build(self):
         self.app_versions = []
 

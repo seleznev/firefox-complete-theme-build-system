@@ -15,7 +15,7 @@ import zipfile
 
 class AddonBuilder():
     def __init__(self, config, src_dir=".", build_dir=".build"):
-        self.config = self._validate_config(config)
+        self.config = config
 
         self.src_dir = os.path.normpath(src_dir)
         self.build_dir = os.path.normpath(build_dir)
@@ -23,34 +23,6 @@ class AddonBuilder():
         self.dependencies = {}
 
         os.makedirs(self.build_dir, exist_ok=True)
-
-    class ConfigError(RuntimeError):
-        def __init__(self, message):
-            self.message = message
-
-    def _validate_config(self, config):
-        try:
-            if not "version" in config and not "override-version" in config:
-                raise AddonBuilder.ConfigError("version is not specified")
-
-            if not "min-version" in config:
-                raise AddonBuilder.ConfigError("min-version is not specified")
-
-            if not "max-version" in config:
-                raise AddonBuilder.ConfigError("max-version is not specified")
-
-            if not "xpi" in config:
-                raise AddonBuilder.ConfigError("file name for *.xpi is not specified")
-        except AddonBuilder.ConfigError as e:
-            print("%s: %s" % (sys.argv[0], e.message))
-            sys.exit(1)
-
-        x = "xpi"
-        for i in ["theme", "extension", "package"]:
-            if i in config[x]:
-                config[x][i] = config[x][i].replace("@VERSION@", config["version"])
-
-        return config
 
     def build(self):
         self.result_files = []
