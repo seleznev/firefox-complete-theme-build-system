@@ -57,13 +57,34 @@ def main():
 
     # Clean up
     if action == "clean":
+        clean_paths = []
         if os.path.isdir(".build"):
-            shutil.rmtree(".build")
-        if os.path.isdir("build/__pycache__"):
-            shutil.rmtree("build/__pycache__")
-        for name in os.listdir("build"):
-            if name.endswith(".pyc"):
-                os.remove(os.path.join("build", name))
+            for base, dirs, files in os.walk(".build", topdown=False):
+                for name in files:
+                    clean_paths.append(os.path.join(base, name))
+                for name in dirs:
+                    clean_paths.append(os.path.join(base, name))
+            clean_paths.append(".build")
+
+        for base, dirs, files in os.walk("build"):
+            for name in files:
+                if name.endswith(".pyc"):
+                    clean_paths.append(os.path.join(base, name))
+        clean_paths.append("build/__pycache__")
+
+        for i in config["xpi"]:
+            clean_paths.append(config["xpi"][i])
+
+        for path in clean_paths:
+            path = os.path.abspath(path)
+            if not os.path.exists(path):
+                continue
+            print("Remove " + path)
+            if os.path.isfile(path):
+                os.remove(path)
+            else:
+                os.rmdir(path)
+
         sys.exit(0)
 
     # Theme building

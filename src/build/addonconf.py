@@ -51,11 +51,12 @@ def main_validate(config):
     if not "xpi" in config:
         raise ConfigError("file name for *.xpi is not specified")
 
+    for i in config["xpi"]:
+        config["xpi"][i] = config["xpi"][i].replace("@VERSION@", config["version"])
+
 def theme_validate(config):
     if not "theme" in config["xpi"]:
         raise ConfigError("file name for theme's .xpi is not specified")
-
-    config["xpi"]["theme"] = config["xpi"]["theme"].replace("@VERSION@", config["version"])
 
     if not "directory-structure" in config:
         config["directory-structure"] = {}
@@ -65,11 +66,7 @@ def extension_validate(config):
     if not "extension" in config["xpi"]:
         raise ConfigError("file name for extension's .xpi is not specified")
 
-    config["xpi"]["extension"] = config["xpi"]["extension"].replace("@VERSION@", config["version"])
-
 def package_validate(config):
     if not "package" in config["xpi"]:
         raise ConfigError("file name for package's .xpi is not specified")
-
-    config["xpi"]["package"] = config["xpi"]["package"].replace("@VERSION@", config["version"])
 
