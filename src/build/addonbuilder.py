@@ -52,6 +52,9 @@ class AddonBuilder():
             self.result_files.append([os.path.join(self.src_dir, source), target])
 
     def _is_need_update(self, target, source=None, dependencies=None):
+        if self.config["force-rebuild"]:
+            return True
+
         target_full = os.path.join(self.build_dir, target)
 
         if not os.path.exists(target_full):
@@ -165,6 +168,7 @@ class AddonBuilder():
     def _load_dependencies_cache(self):
         path = os.path.join(self.build_dir, "deps.cache")
         if not os.path.exists(path):
+            self.config["force-rebuild"] = True
             return self.default_dependencies
         with open(path, "r") as cache_file:
             return json.load(cache_file)
