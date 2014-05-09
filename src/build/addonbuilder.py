@@ -107,8 +107,16 @@ class AddonBuilder():
         if app_version:
             variables = ["-D", "APP_VERSION="+str(app_version)]
 
+        python2 = "python2"
+        if "PYTHON2PATH" in os.environ:
+            python2 = os.environ.get("PYTHON2PATH")
+            if not (os.path.isfile(python2) or os.access(python2, os.X_OK)):
+                print("Error: can't execute %s" % python2)
+                print("Please check your PYTHON2PATH environment variable")
+                sys.exit(1)
+
         cmd = []
-        cmd = cmd + ["python2", "build/preprocessor.py", "--marker=%"]
+        cmd = cmd + [python2, "build/preprocessor.py", "--marker=%"]
         cmd = cmd + ["--depend="+deps_tmp_file]
         cmd = cmd + variables
         cmd = cmd + ["--output="+target_full, source_full]
