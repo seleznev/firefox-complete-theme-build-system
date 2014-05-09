@@ -78,8 +78,7 @@ class AddonBuilder():
     def _generate_install_manifest(self, source, target):
         source = os.path.join(self.src_dir, source)
         target = os.path.join(self.build_dir, target)
-        if self.config["verbose"]:
-            print("Convert %s to %s" % (source, target))
+        print("Convert %s to %s" % (source, target))
 
         os.makedirs(os.path.dirname(target), exist_ok=True)
 
@@ -94,8 +93,10 @@ class AddonBuilder():
     def _preprocess(self, source, target, app_version=None):
         source_full = os.path.join(self.src_dir, source)
         target_full = os.path.join(self.build_dir, target)
-        if self.config["verbose"]:
-            print("Convert %s to %s" % (source_full, target_full))
+        if not self.config["verbose"]:
+            print("Generate %s" % target_full)
+        else:
+            print("Generate %s from %s" % (target_full, source_full))
 
         deps_tmp_file = os.path.join(self.build_dir, "deps.tmp")
         os.makedirs(os.path.dirname(deps_tmp_file), exist_ok=True)
@@ -112,9 +113,13 @@ class AddonBuilder():
         cmd = cmd + variables
         cmd = cmd + ["--output="+target_full, source_full]
 
-        if subprocess.call(cmd):
-            print("BuildError: preprocessor.py returned no zero code")
-            print("Full command was: \"%s\"" % " ".join(str(e) for e in cmd))
+        try:
+            subprocess.check_output(cmd, stderr=subprocess.STDOUT,
+                                    universal_newlines=True)
+        except subprocess.CalledProcessError as e:
+            print("BuildError: preprocessor.py returned no zero code (%i)" % e.returncode)
+            print("Command: \"%s\"" % " ".join(str(a) for a in cmd))
+            print(e.output, end="")
             os.remove(target_full)
             sys.exit(2)
 
@@ -135,9 +140,11 @@ class AddonBuilder():
             files_map = self.result_files
 
         xpi = zipfile.ZipFile(self.xpi_file, "w", compression=zipfile.ZIP_DEFLATED)
+        if not self.config["verbose"]:
+            print("Create %s" % self.xpi_file)
         for i in files_map:
-            if self.config["verbose"] >= 2:
-                print("Archiving %s to %s" % (i[0], i[1]))
+            if self.config["verbose"]:
+                print("Archive %s to @%s@/%s" % (i[0], self.xpi_file, i[1]))
             xpi.write(i[0], i[1]) # source, path_inside_xpi
         xpi.close()
 
