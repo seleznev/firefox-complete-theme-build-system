@@ -1,6 +1,6 @@
 # Firefox Complete Theme Build System
 
-Pack of scripts what can help you to make a Firefox theme.
+Scripts pack that can help you to make a Firefox theme.
 
 ## How to use
 
@@ -27,6 +27,12 @@ Also you can specifity _$VERSION_ environment variable or use _--version_ to ove
 ```Bash
 $ ./make-xpi.py --version="0.9" all
 $ VERSION="0.9" ./make-xpi.py all
+```
+
+For more details try _--help_.
+
+```Bash
+$ ./make-xpi.py --help
 ```
 
 ## Copyright
