@@ -9,7 +9,7 @@ class ExtensionBuilder(AddonBuilder):
         AddonBuilder.__init__(self, config=config,
                               src_dir=src_dir, build_dir=build_dir)
 
-        self.xpi_file = self.config["xpi"]["extension"]
+        self.xpi_file = self.config["extension"]["xpi"]
 
         self.dependencies = {
             "install.rdf.in": ["../config.json"]

@@ -26,29 +26,37 @@ Structure and fuilds
 
   Max support version of Firefox for all addons. Will replace ``@MAX_VERSION@``.
 
-* **xpi**
+* **theme**
 
-  *Required: yes.*
+*Required: no.*
 
   Contains file names for all results .xpi files. File name only, not path!
   Also you can use ``@VERSION@`` string in here.
 
-  - **theme**
+  - **xpi**
 
     *Required: yes.*
-    
+
     File name for theme's xpi. For example: ``test-theme.xpi``.
 
-  - **extension**
+* **extension**
+
+*Required: no.*
+
+  - **xpi**
 
     *Required: yes.*
-    
+
     File name for extension's xpi. For example: ``test-extension.xpi``.
 
-  - **package**
+* **package**
+
+*Required: no.*
+
+  - **xpi**
 
     *Required: yes.*
-    
+
     File name for package's xpi what will contain ``install.rdf``, theme and
     extension installer files. For example: ``test-@VERSION@.xpi``.
 

@@ -13,5 +13,5 @@ class ThemeBuilder(AddonBuilder):
         AddonBuilder.__init__(self, config=config,
                               src_dir=src_dir, build_dir=build_dir)
 
-        self.xpi_file = self.config["xpi"]["theme"]
+        self.xpi_file = self.config["theme"]["xpi"]
 
