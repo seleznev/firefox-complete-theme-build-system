@@ -41,6 +41,23 @@ For more details try _--help_.
 $ ./make-xpi.py --help
 ```
 
+## Build environment
+
+You need Python 2 and Python 3 in your system's $PATH. For example:
+
+```Bash
+$ python2 --version
+Python 2.7.8
+$ python3 --version
+Python 3.4.1
+```
+
+For override path to python2 you can use $PYTHON2PATH variable, to python3:
+
+```Bash
+$ /your/path/to/python3 make-xpi.py
+```
+
 ## Copyright
 
 Following files was created by Mozilla:
