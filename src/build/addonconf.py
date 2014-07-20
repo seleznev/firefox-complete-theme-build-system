@@ -55,10 +55,6 @@ def theme_validate(config):
     if not "theme" in config["xpi"]:
         raise ConfigError("file name for theme's .xpi is not specified")
 
-    if not "directory-structure" in config:
-        config["directory-structure"] = {}
-        config["directory-structure"]["shared-dir"] = "shared"
-
 def extension_validate(config):
     if not "extension" in config["xpi"]:
         raise ConfigError("file name for extension's .xpi is not specified")

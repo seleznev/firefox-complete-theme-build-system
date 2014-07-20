@@ -20,7 +20,6 @@ class AddonBuilder():
 
         self.src_dir = os.path.normpath(src_dir)
         self.build_dir = os.path.normpath(build_dir)
-        self.shared_dir = self.config["directory-structure"]["shared-dir"]
 
         self.dependencies = {}
         self.default_dependencies = {
@@ -76,11 +75,9 @@ class AddonBuilder():
                 self.result_files.append([os.path.join(self.build_dir, target), target])
         elif source.endswith(".inc.css"):
             pass
-        elif source.startswith(self.shared_dir + "/"):
+        elif source.startswith("shared/"):
             for app_version in self.app_versions:
-                target = re.sub(r"^"+self.shared_dir,
-                                "chrome-" + str(app_version),
-                                source)
+                target = re.sub(r"^shared", "chrome-" + str(app_version), source)
 
                 if os.path.exists(os.path.join(self.src_dir, target)):
                     continue

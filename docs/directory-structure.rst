@@ -16,7 +16,7 @@ A required files structure
       ├── shared
       ├── chrome-30
       ├── chrome.manifest.in
-      ├── install.rdf.in
+      └── install.rdf.in
 
 A real example files structure
 
@@ -42,7 +42,7 @@ A real example files structure
       │       └── devtools
       ├── chrome-31
       │   ├── browser
-      │       └── devtools
+      │   │   └── devtools
       │   └── global
       ├── chrome-32
       │   ├── browser

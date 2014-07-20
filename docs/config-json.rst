@@ -52,17 +52,6 @@ Structure and fuilds
     File name for package's xpi what will contain ``install.rdf``, theme and
     extension installer files. For example: ``test-@VERSION@.xpi``.
 
-* **directory-structure**
-
-  *Required: no.*
-
-  - **shared-dir**
-
-    *Required: no. Default value -* ``shared``.
-
-    It's contains directory name for shared files in a theme beetwin Firefox
-    versions.
-
 Example
 =======
 
@@ -76,9 +65,6 @@ Example
       "theme": "firefox-theme-test.xpi",
       "extension": "firefox-extension-test.xpi",
       "package": "firefox-all-in-one-@VERSION@.xpi"
-    },
-    "directory-structure": {
-      "shared-dir": "chrome"
     }
   }
 
