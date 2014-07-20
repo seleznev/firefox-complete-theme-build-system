@@ -4,10 +4,16 @@ Scripts pack that can help you to make a Firefox theme.
 
 ## How to use
 
-Main script is __make-xpi.py__ written on Python 3. Use it for build xpi and clean temporary files.
+Main script is __make-xpi.py__ written on Python 3. Use it to build xpi and clean temporary files.
 
 ```Bash
 $ ./make-xpi.py [TARGET]
+```
+
+or
+
+```Bash
+$ python3 make-xpi.py [TARGET]
 ```
 
 Available targets: _all_, _theme_, _extension_ and _clean_. Default is _all_.
