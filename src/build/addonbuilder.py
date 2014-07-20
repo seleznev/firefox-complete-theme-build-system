@@ -2,6 +2,8 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
+from __future__ import (print_function)
+
 import sys
 import os
 import re
@@ -21,7 +23,8 @@ class AddonBuilder():
 
         self.dependencies = {}
 
-        os.makedirs(self.build_dir, exist_ok=True)
+        if not os.path.isdir(self.build_dir):
+            os.makedirs(self.build_dir) # exist_ok=True
 
     def build(self):
         self.result_files = []
@@ -85,7 +88,8 @@ class AddonBuilder():
         else:
             console.log("generating", "%s from %s" % (target, source))
 
-        os.makedirs(os.path.dirname(target), exist_ok=True)
+        if not os.path.isdir(os.path.dirname(target)):
+            os.makedirs(os.path.dirname(target)) # exist_ok=True
 
         with open(source, "rt") as source_file:
             with open(target, "wt") as target_file:
@@ -104,9 +108,12 @@ class AddonBuilder():
             console.log("preprocessor.py", "... %s from %s" % (target_full, source_full))
 
         deps_tmp_file = os.path.join(self.build_dir, "deps.tmp")
-        os.makedirs(os.path.dirname(deps_tmp_file), exist_ok=True)
 
-        os.makedirs(os.path.dirname(target_full), exist_ok=True)
+        if not os.path.isdir(os.path.dirname(deps_tmp_file)):
+            os.makedirs(os.path.dirname(deps_tmp_file)) # exist_ok=True
+
+        if not os.path.isdir(os.path.dirname(target_full)):
+            os.makedirs(os.path.dirname(target_full)) # exist_ok=True
 
         variables = []
         if app_version:

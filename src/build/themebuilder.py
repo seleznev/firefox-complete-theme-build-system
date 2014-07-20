@@ -53,7 +53,8 @@ class ThemeBuilder(AddonBuilder):
         else:
             console.log("generating", "%s from %s" % (target, source))
 
-        os.makedirs(os.path.dirname(target), exist_ok=True)
+        if not os.path.isdir(os.path.dirname(target)):
+            os.makedirs(os.path.dirname(target)) # exist_ok=True
 
         with open(source, "rt") as source_file:
             with open(target, "wt") as target_file:
