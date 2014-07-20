@@ -20,13 +20,31 @@ class AddonBuilder():
 
         self.src_dir = os.path.normpath(src_dir)
         self.build_dir = os.path.normpath(build_dir)
+        self.shared_dir = self.config["directory-structure"]["shared-dir"]
 
         self.dependencies = {}
+        self.default_dependencies = {
+            "install.rdf.in": ["../config.json"],
+            "chrome.manifest.in": ["../config.json"]
+        }
 
         if not os.path.isdir(self.build_dir):
             os.makedirs(self.build_dir) # exist_ok=True
 
     def build(self):
+        self.app_versions = []
+
+        if "target-version" in self.config:
+            self.app_versions.append(self.config["target-version"])
+        else:
+            for name in os.listdir(self.src_dir):
+                if not name.startswith("chrome-"):
+                    continue
+                version = int(name.replace("chrome-", ""))
+                self.app_versions.append(version)
+
+        self.dependencies = self._load_dependencies_cache()
+
         self.result_files = []
         for base, dirs, files in os.walk(self.src_dir):
             for name in files:
@@ -34,8 +52,10 @@ class AddonBuilder():
                 self._process_file(source)
         self._create_xpi()
 
+        self._save_dependencies_cache(self.dependencies)
+
     def _process_file(self, source):
-        if source == "install.rdf.in":
+        if source in ["chrome.manifest.in", "install.rdf.in"]:
             target = source[:-3]
             override = False
             if "override-version" in self.config or "target-version" in self.config:
@@ -43,12 +63,57 @@ class AddonBuilder():
                 override = True
 
             if override or self._is_need_update(target, source):
-                self._generate_install_manifest(source, target)
+                if source == "install.rdf.in":
+                    self._generate_install_manifest(source, target)
+                else:
+                    self._generate_chrome_manifest(source, target,
+                                               min(self.app_versions),
+                                               max(self.app_versions))
 
             if override:
                 self.result_files.append([os.path.join(self.build_dir, target), target[:-9]])
             else:
                 self.result_files.append([os.path.join(self.build_dir, target), target])
+        elif source.endswith(".inc.css"):
+            pass
+        elif source.startswith(self.shared_dir + "/"):
+            for app_version in self.app_versions:
+                target = re.sub(r"^"+self.shared_dir,
+                                "chrome-" + str(app_version),
+                                source)
+
+                if os.path.exists(os.path.join(self.src_dir, target)):
+                    continue
+
+                if source.endswith(".css"):
+                    deps = self._get_dependencies(source)
+                    if self._is_need_update(target, dependencies=deps):
+                        self._preprocess(source, target, app_version)
+                    self.result_files.append([os.path.join(self.build_dir, target), target])
+                else:
+                    self.result_files.append([os.path.join(self.src_dir, source), target])
+        elif source.startswith("chrome-"):
+            version = source.replace("chrome-", "")
+            version = int(re.sub(r"\/.*", "", version))
+            if not version in self.app_versions:
+                return
+
+            target = source
+
+            deps = [source]
+            if source in self.dependencies:
+                deps = deps + self.dependencies[source]
+
+            if source.endswith(".css"):
+                if self._is_need_update(target, dependencies=deps):
+                    if source.startswith("chrome-"):
+                        app_version = re.sub(r"^chrome-", "", source)
+                        app_version = re.sub(r"\/.*", "", app_version)
+                        app_version = int(app_version)
+                    self._preprocess(source, target, app_version)
+                self.result_files.append([os.path.join(self.build_dir, target), target])
+            else:
+                self.result_files.append([os.path.join(self.src_dir, source), target])
         else:
             target = source
             self.result_files.append([os.path.join(self.src_dir, source), target])
@@ -68,8 +133,9 @@ class AddonBuilder():
                 dependencies = dependencies + (self.dependencies[source])
 
         target_mtime = os.path.getmtime(target_full)
-        for f in dependencies:
-            if os.path.getmtime(os.path.join(self.src_dir, f)) > target_mtime:
+        for i in dependencies:
+            d = os.path.join(self.src_dir, i)
+            if not os.path.exists(d) or os.path.getmtime(d) > target_mtime:
                 return True
 
         return False
@@ -98,6 +164,30 @@ class AddonBuilder():
                     l = l.replace("@MIN_VERSION@", str(self.config["min-version"]))
                     l = l.replace("@MAX_VERSION@", str(self.config["max-version"]))
                     target_file.write(l)
+
+    def _generate_chrome_manifest(self, source, target, min_version, max_version):
+        source = os.path.join(self.src_dir, source)
+        target = os.path.join(self.build_dir, target)
+        if not self.config["verbose"]:
+            console.log("generating", target)
+        else:
+            console.log("generating", "%s from %s" % (target, source))
+
+        if not os.path.isdir(os.path.dirname(target)):
+            os.makedirs(os.path.dirname(target)) # exist_ok=True
+
+        with open(source, "rt") as source_file:
+            with open(target, "wt") as target_file:
+                for line in source_file:
+                    line = line.strip()
+                    if "@VERSION@" in line:
+                        for version in range(min_version, max_version+1):
+                            nl = line.replace("@VERSION@", str(version))
+                            if version != min_version:
+                                nl = nl + " appversion>=%ia1" % version
+                            target_file.write(nl + "\n")
+                    else:
+                        target_file.write(line + "\n")
 
     def _preprocess(self, source, target, app_version=None):
         source_full = os.path.join(self.src_dir, source)
