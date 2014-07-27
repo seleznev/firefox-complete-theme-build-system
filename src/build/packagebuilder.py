@@ -12,7 +12,7 @@ class PackageBuilder(AddonBuilder):
         self.xpi_file = self.config["package"]["xpi"]
 
         self.dependencies = {
-            "install.rdf.in": ["config.json"]
+            "install.rdf": ["config.json"]
         }
 
     def build(self):

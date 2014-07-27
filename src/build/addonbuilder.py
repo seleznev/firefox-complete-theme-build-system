@@ -23,8 +23,8 @@ class AddonBuilder():
 
         self.dependencies = {}
         self.default_dependencies = {
-            "install.rdf.in": ["../config.json"],
-            "chrome.manifest.in": ["../config.json"]
+            "install.rdf": ["../config.json"],
+            "chrome.manifest": ["../config.json"]
         }
 
         if not os.path.isdir(self.build_dir):
@@ -83,7 +83,7 @@ class AddonBuilder():
                     continue
 
                 if source.endswith(".css"):
-                    deps = self._get_dependencies(source)
+                    deps = self._get_dependencies(source, target)
                     if self._is_need_update(target, dependencies=deps):
                         self._preprocess(source, target, app_version)
                     self.result_files.append([os.path.join(self.build_dir, target), target])
@@ -98,8 +98,8 @@ class AddonBuilder():
             target = source
 
             deps = [source]
-            if source in self.dependencies:
-                deps = deps + self.dependencies[source]
+            if target in self.dependencies:
+                deps = deps + self.dependencies[target]
 
             if source.endswith(".css"):
                 if self._is_need_update(target, dependencies=deps):
@@ -126,8 +126,8 @@ class AddonBuilder():
 
         if not dependencies and source:
             dependencies = [source]
-            if source in self.dependencies:
-                dependencies = dependencies + (self.dependencies[source])
+            if target in self.dependencies:
+                dependencies = dependencies + (self.dependencies[target])
 
         target_mtime = os.path.getmtime(target_full)
         for i in dependencies:
@@ -137,10 +137,10 @@ class AddonBuilder():
 
         return False
 
-    def _get_dependencies(self, source):
+    def _get_dependencies(self, source, target):
         deps = [source]
-        if source in self.dependencies:
-            deps = deps + self.dependencies[source]
+        if target in self.dependencies:
+            deps = deps + self.dependencies[target]
         return deps
 
     def _generate_install_manifest(self, source, target):
@@ -238,7 +238,7 @@ class AddonBuilder():
 
         if line:
             deps = line.split(" ")
-            self._update_dependencies(source, deps)
+            self._update_dependencies(target, deps)
 
         #os.remove(deps_tmp_file)
 
@@ -255,11 +255,11 @@ class AddonBuilder():
             xpi.write(i[0], i[1]) # source, path_inside_xpi
         xpi.close()
 
-    def _update_dependencies(self, source, deps):
+    def _update_dependencies(self, target, deps):
         if len(deps) == 0 and source in self.dependencies:
-            del self.dependencies[source]
+            del self.dependencies[target]
         elif len(deps) > 0:
-            self.dependencies[source] = deps
+            self.dependencies[target] = deps
 
     def _load_dependencies_cache(self):
         path = os.path.join(self.build_dir, "deps.cache")

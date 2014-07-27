@@ -12,5 +12,5 @@ class ExtensionBuilder(AddonBuilder):
         self.xpi_file = self.config["extension"]["xpi"]
 
         self.dependencies = {
-            "install.rdf.in": ["../config.json"]
+            "install.rdf": ["../config.json"]
         }
