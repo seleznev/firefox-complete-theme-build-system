@@ -89,31 +89,24 @@ class AddonBuilder():
                     self.result_files.append([os.path.join(self.build_dir, target), target])
                 else:
                     self.result_files.append([os.path.join(self.src_dir, source), target])
-        elif source.startswith("chrome-"):
-            version = source.replace("chrome-", "")
-            version = int(re.sub(r"\/.*", "", version))
-            if not version in self.app_versions:
-                return
+        else:
+            if source.startswith("chrome-"):
+                version = source.replace("chrome-", "")
+                version = int(re.sub(r"\/.*", "", version))
+                if not version in self.app_versions:
+                    return
+            else:
+                version = None
 
             target = source
 
-            deps = [source]
-            if target in self.dependencies:
-                deps = deps + self.dependencies[target]
-
             if source.endswith(".css"):
+                deps = self._get_dependencies(source, target)
                 if self._is_need_update(target, dependencies=deps):
-                    if source.startswith("chrome-"):
-                        app_version = re.sub(r"^chrome-", "", source)
-                        app_version = re.sub(r"\/.*", "", app_version)
-                        app_version = int(app_version)
-                    self._preprocess(source, target, app_version)
+                    self._preprocess(source, target, version)
                 self.result_files.append([os.path.join(self.build_dir, target), target])
             else:
                 self.result_files.append([os.path.join(self.src_dir, source), target])
-        else:
-            target = source
-            self.result_files.append([os.path.join(self.src_dir, source), target])
 
     def _is_need_update(self, target, source=None, dependencies=None):
         if self.config["force-rebuild"]:
@@ -125,9 +118,7 @@ class AddonBuilder():
             return True
 
         if not dependencies and source:
-            dependencies = [source]
-            if target in self.dependencies:
-                dependencies = dependencies + (self.dependencies[target])
+            dependencies = self._get_dependencies(source, target)
 
         target_mtime = os.path.getmtime(target_full)
         for i in dependencies:
@@ -256,7 +247,7 @@ class AddonBuilder():
         xpi.close()
 
     def _update_dependencies(self, target, deps):
-        if len(deps) == 0 and source in self.dependencies:
+        if len(deps) == 0 and target in self.dependencies:
             del self.dependencies[target]
         elif len(deps) > 0:
             self.dependencies[target] = deps
